@@ -228,7 +228,5 @@ Throughout the experimentation process, several approaches were tested but did n
 - **Ordinal Encoder for Categorical Features**: We experimented with using ordinal encoding for categorical features like `anatom_site_general` and `sex`, but it performed worse than One-Hot Encoding. This is likely because ordinal relationships between categories were non-existent or irrelevant in the dataset.
 
 #### 8. **Adding Previous Competition Images**
-- **Using Previous Competition Images**: We attempted to incorporate images from previous ISIC competitions to increase the dataset size. However, this approach did not work well because the images from this year’s competition were of much lower resolution (15x15 mm crops), whereas the older images were high-resolution dermoscopic images. This discrepancy in resolution led to inconsistencies in model training and hurt overall performance.
-
-These methods were systematically tested but ultimately did not contribute positively to the overall model performance. By documenting these, we aim to avoid retracing steps in future iterations and provide insights into what did not work in this specific context.
+- **Using Previous Competition Images**: We attempted to incorporate images from previous ISIC competitions to increase the dataset size. However, this approach did not work well because the images from this year’s competition were of much lower resolution, whereas the older images were high-resolution dermoscopic images. This discrepancy in resolution led to inconsistencies in model training and hurt overall performance.
 
