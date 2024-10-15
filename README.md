@@ -33,6 +33,7 @@ CONFIG = {
     "n_accumulate": 1,
     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
 }
+```
 
 ## Handling Class Imbalance
 
@@ -41,6 +42,7 @@ Given the extreme class imbalance, we perform stratified sampling to maintain th
 ```python
 df_positive = df[df["target"] == 1].reset_index(drop=True)
 df_negative = df[df["target"] == 0].reset_index(drop=True)
+```
 
 ## Cross-Validation Strategy
 
@@ -55,5 +57,5 @@ df["kfold"] = -1
 
 for fold, (train_idx, val_idx) in enumerate(sgfk.split(df, df.target, df.patient_id)):
     df.loc[val_idx, "kfold"] = int(fold)
-
+```
 
