@@ -125,4 +125,30 @@ The code is flexible to accommodate other architectures such as EVA02, ResNet, R
 We used Binary Cross-Entropy Loss for this binary classification task. We also tried FocalLoss, but the target mean was much higher than expected.
 
 ## Optimizer and Scheduler
-We used the Adam optimizer with a learning rate scheduler combining gradual warmup and cosine annealing:
+We used the Adam optimizer with a learning rate scheduler combining gradual warmup and cosine annealing
+
+## Tabular Model with OOF Stacking
+After generating OOF predictions from the image model, we use these predictions as additional features in a tabular model that includes Gradient Boosted Decision Trees (GBDT). The model is an ensemble of LightGBM, CatBoost, and XGBoost models, with OOF stacking predictions integrated into the tabular features.
+
+## Feature Engineering
+#### 1. **Patient-Level Normalization**
+
+Given the dataset includes multiple lesions per patient, we introduced several **patient-level normalization** features to account for variations in lesion characteristics across patients:
+
+- **Patient-Level Mean Normalization**: For each lesion feature, we computed the mean for each patient and normalized the feature by subtracting the mean and dividing by the standard deviation for that patient.
+  - Example: `lesion_size_ratio_patient_norm = (lesion_size_ratio - mean_lesion_size_ratio_per_patient) / std_lesion_size_ratio_per_patient`
+- **Patient-Level Sum Ratio**: For each feature, we calculated the ratio of a lesion's value to the sum of all lesions for that patient.
+- **Patient-Level Min-Max Scaling**: Features were scaled within each patient using the min-max range of each feature.
+- **Patient-Level Ordinal Ranking**: Each lesion's feature was ranked within the patient cohort, helping to capture relative ordering of features like lesion size and color variation.
+- **Patient-Level Quantile Scaling**: Each lesion feature was quantile-scaled within the patient's lesion set, ensuring consistent distribution of values across patients.
+
+#### 2. **Ugly Duckling Processing**
+
+To identify outliers (anomalous lesions) within a patient, we applied **Ugly Duckling processing**:
+
+- **Z-Score Calculation**: We calculated z-scores for all lesion features within a patient's group, comparing each lesion to others from the same patient.
+  - Example: `ud_size_ratio = |z-score(lesion_size_ratio)|`
+- **Location-Specific Ugly Ducklings**: We extended this process by grouping lesions by their anatomical site and calculating z-scores for each feature within those subgroups.
+- **Percentile-Based Ugly Duckling Scores**: We also ranked lesions within the patient by percentiles, capturing how extreme a lesion's characteristics were relative to others.
+- **Ugly Duckling Count**: We counted how many features of a lesion exceed a certain threshold (e.g., z-score > 2), flagging highly anomalous lesions.
+- **Severity and Consistency**: Features like "ugly duckling severity" and "ugly duckling consistency" captured how extreme and how consistent these anomalies were across the lesion set.
