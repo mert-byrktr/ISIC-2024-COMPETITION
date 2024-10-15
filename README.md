@@ -48,8 +48,10 @@ df_negative = df[df["target"] == 0].reset_index(drop=True)
 
 We use Stratified Group K-Fold cross-validation to ensure that:
 
-The target distribution is balanced across folds.
-Patients (groups) are not split between training and validation sets to prevent data leakage.
+* The target distribution is balanced across folds.
+* Patients (groups) are not split between training and validation sets to prevent data leakage.
+
+Same cv strategy is applied to both OOF stacking predictions and tabular models.
 
 ```python
 sgfk = StratifiedGroupKFold(n_splits=CONFIG['n_fold'], shuffle=True, random_state=CONFIG['seed'])
@@ -58,4 +60,69 @@ df["kfold"] = -1
 for fold, (train_idx, val_idx) in enumerate(sgfk.split(df, df.target, df.patient_id)):
     df.loc[val_idx, "kfold"] = int(fold)
 ```
+## Augmentations
+We applied extensive augmentation techniques from previous winning solutions of the ISIC 2020 competition using the albumentations library to enrich the training data:
 
+```python
+data_transforms = {
+    "train": A.Compose([
+        A.Resize(CONFIG['img_size'], CONFIG['img_size']),
+        A.Flip(p=0.5),
+        A.RandomRotate90(p=0.5),
+        A.Transpose(p=0.5),
+        A.VerticalFlip(p=0.5),
+        A.HorizontalFlip(p=0.5),
+        A.OneOf([
+            A.MotionBlur(blur_limit=5),
+            A.MedianBlur(blur_limit=5),
+            A.GaussianBlur(blur_limit=5),
+            A.GaussNoise(var_limit=(5.0, 30.0)),
+        ], p=0.7),
+        A.OneOf([
+            A.OpticalDistortion(distort_limit=1.0),
+            A.GridDistortion(num_steps=5, distort_limit=1.0),
+            A.ElasticTransform(alpha=3),
+        ], p=0.7),
+        A.CLAHE(clip_limit=4.0, p=0.7),
+        A.HueSaturationValue(
+            hue_shift_limit=10, sat_shift_limit=20, val_shift_limit=10, p=0.5),
+        A.CoarseDropout(max_height=int(CONFIG['img_size']*0.375),
+                        max_width=int(CONFIG['img_size']*0.375), num_holes=1, p=0.7),
+        A.ShiftScaleRotate(shift_limit=0.1,
+                           scale_limit=0.1,
+                           rotate_limit=15,
+                           border_mode=0,
+                           p=0.85),
+        A.RandomBrightnessContrast(
+            brightness_limit=(-0.2, 0.2),
+            contrast_limit=(-0.2, 0.2),
+            p=0.75),
+        A.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225],
+            max_pixel_value=255.0,
+            p=1.0),
+        ToTensorV2()], p=1.),
+    "valid": A.Compose([
+        A.Resize(CONFIG['img_size'], CONFIG['img_size']),
+        A.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225],
+            max_pixel_value=255.0,
+            p=1.0),
+        ToTensorV2()], p=1.)
+}
+
+```
+
+## Model Architecture
+EfficientNet with GeM Pooling
+We used the EfficientNet architecture with a Generalized Mean (GeM) pooling layer for better feature aggregation.
+The code is flexible to accommodate other architectures such as EVA02, ResNet, ResNeXt, etc.
+
+## Loss Function
+
+We used Binary Cross-Entropy Loss for this binary classification task. We also tried FocalLoss, but the target mean was much higher than expected.
+
+## Optimizer and Scheduler
+We used the Adam optimizer with a learning rate scheduler combining gradual warmup and cosine annealing:
