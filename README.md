@@ -16,3 +16,11 @@ We applied the following augmentations to preprocess the image data before feedi
 
 * Resize: All images are resized to the configured size (CONFIG['img_size']).
 * Normalize: We normalize the pixel values using standard ImageNet mean and standard deviation.
+
+**Model Architecture**
+
+The image model is based on EfficientNetB0 architecture with Generalized Mean (GeM) pooling for feature aggregation. We replaced the default pooling layer with a GeM layer and used a linear layer with sigmoid activation to output the probability of malignancy for each image.
+
+**Out-of-Fold Predictions**
+
+We utilized StratifiedGroupKFold cross-validation with 5 splits, ensuring that the target distribution remains balanced across folds and that patient data is grouped together. OOF predictions were generated for each fold and saved for stacking with tabular data in later steps.
