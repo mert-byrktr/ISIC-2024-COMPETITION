@@ -130,6 +130,23 @@ We used the Adam optimizer with a learning rate scheduler combining gradual warm
 ## Tabular Model with OOF Stacking
 After generating OOF predictions from the image model, we use these predictions as additional features in a tabular model that includes Gradient Boosted Decision Trees (GBDT). The model is an ensemble of LightGBM, CatBoost, and XGBoost models, with OOF stacking predictions integrated into the tabular features.
 
+## Cross-Validation and Fold Distribution
+
+We used **Stratified Group K-Fold Cross-Validation** to ensure that:
+
+- The target distribution (malignant vs. benign) is balanced across folds.
+- No patient appears in both training and validation sets, thereby preventing data leakage.
+
+To verify the distribution of target labels and unique patients across the folds, we calculated the mean target ratio, the count of samples, and the number of unique patients in each fold:
+
+```python
+# Verify the distribution across folds
+print(df_train.groupby('fold').agg({
+    'target': ['mean', 'count'],
+    'patient_id': 'nunique'
+}))
+```
+
 ## Feature Engineering
 #### 1. **Patient-Level Normalization**
 
@@ -152,3 +169,32 @@ To identify outliers (anomalous lesions) within a patient, we applied **Ugly Duc
 - **Percentile-Based Ugly Duckling Scores**: We also ranked lesions within the patient by percentiles, capturing how extreme a lesion's characteristics were relative to others.
 - **Ugly Duckling Count**: We counted how many features of a lesion exceed a certain threshold (e.g., z-score > 2), flagging highly anomalous lesions.
 - **Severity and Consistency**: Features like "ugly duckling severity" and "ugly duckling consistency" captured how extreme and how consistent these anomalies were across the lesion set.
+
+  
+#### 3. **Handling Highly Correlated Features**
+
+To prevent multicollinearity and improve model performance, we dropped features that were highly correlated with one another. This step was crucial because many of the engineered features, particularly those related to lesion size, color, and shape, exhibited strong correlations.
+
+We calculated the correlation matrix of all numerical features and applied a threshold of 0.91 to identify and remove highly correlated features:
+
+```python
+def select_features_using_corr_matrix(df, threshold=0.91):
+    corr_matrix = df.corr().abs()
+    upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+    to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
+    selected_features = df.columns.difference(to_drop)
+    return selected_features.tolist()
+```
+
+#### 4. **Out-of-Fold (OOF) Stacking Features**
+
+To further improve the tabular model's performance, we integrated OOF predictions from the image models as additional features in the tabular data. These predictions were generated using models like EfficientNet and EVA02, and were subsequently used for feature stacking in the Gradient Boosted Decision Tree (GBDT) models.
+
+```python
+df_effb0_oof = pd.read_csv(oof_path)
+df_effb0_oof = df_effb0_oof[['oof_predictions_effnetb0']].reset_index(drop=True)
+df = df.reset_index(drop=True)
+df['oof_predictions_effnetb0'] = df_effb0_oof['oof_predictions_effnetb0']
+feature_cols.append('oof_predictions_effnetb0')
+
+```
