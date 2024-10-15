@@ -198,3 +198,37 @@ df['oof_predictions_effnetb0'] = df_effb0_oof['oof_predictions_effnetb0']
 feature_cols.append('oof_predictions_effnetb0')
 
 ```
+##. **Methods That Didn't Work**
+
+Throughout the experimentation process, several approaches were tested but did not lead to meaningful improvements in model performance. These include the following:
+
+#### 1. **Image Models**
+- **Focal Loss**: Focal Loss was tested as an alternative to Binary Cross-Entropy (BCE) to address the extreme class imbalance. However, it did not improve model performance compared to BCE. The highly imbalanced dataset likely required different handling techniques, and Focal Loss introduced instability during training.
+  
+- **ResNet Architectures for OOF Stacking**: We experimented with ResNet architectures for generating OOF predictions to be used in the tabular model. These architectures performed worse than the EfficientNet and EVA02 models, and their OOF predictions did not enhance the tabular model.
+
+#### 2. **Feature Selection**
+- **SHAP and LOFO (Leave-One-Feature-Out)**: Feature selection using SHAP values and LOFO was explored to identify the most important features. While theoretically sound, these methods did not lead to a meaningful improvement in model performance. They failed to outperform basic correlation-based feature selection due to the complexity of interactions between features.
+
+#### 3. **Optimizers**
+- **Trying Different Optimizers**: Beyond Adam, we experimented with other optimizers such as SGD and RMSprop. However, these alternative optimizers did not perform as well as Adam in terms of convergence speed and model performance on validation data.
+
+#### 4. **Learning Rate Schedulers**
+- **GradualWarmupScheduler**: While combining gradual warmup with cosine annealing was tested, it did not significantly outperform the default CosineAnnealingLR scheduler on validation performance. 
+- **CosineAnnealingWarmRestarts**: This was also tested to handle cyclic learning rates, but it did not yield improvements in model generalization.
+
+#### 5. **Augmentations**
+- **Hair Removal**: Augmentation techniques that removed hair from skin lesion images were attempted, but this approach did not significantly improve the image models' ability to distinguish between benign and malignant lesions.
+- **Microscope Augmentation**: Simulating microscope effects as an augmentation technique was also tested, but it failed to enhance the model's understanding of lesion characteristics and did not improve accuracy.
+
+#### 6. **Data Sampling**
+- **Downsampling Negative Images Other Than 1/50 Ratio**: Different downsampling ratios for negative samples were tested to reduce class imbalance (e.g., 1/20 and 1/10), but the 1/50 ratio worked best. These other ratios resulted in either underfitting or poor generalization.
+
+#### 7. **Categorical Feature Encoding**
+- **Ordinal Encoder for Categorical Features**: We experimented with using ordinal encoding for categorical features like `anatom_site_general` and `sex`, but it performed worse than One-Hot Encoding. This is likely because ordinal relationships between categories were non-existent or irrelevant in the dataset.
+
+#### 8. **Adding Previous Competition Images**
+- **Using Previous Competition Images**: We attempted to incorporate images from previous ISIC competitions to increase the dataset size. However, this approach did not work well because the images from this year’s competition were of much lower resolution (15x15 mm crops), whereas the older images were high-resolution dermoscopic images. This discrepancy in resolution led to inconsistencies in model training and hurt overall performance.
+
+These methods were systematically tested but ultimately did not contribute positively to the overall model performance. By documenting these, we aim to avoid retracing steps in future iterations and provide insights into what did not work in this specific context.
+
