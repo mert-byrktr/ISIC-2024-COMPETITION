@@ -1,4 +1,4 @@
-Participating in this Kaggle competition was an important experience for me. I initially ranked 16th out of 2700 participants on the public leaderboard, which was exciting. However, when the private leaderboard was revealed, I dropped to 215th place. This was likely due to poor submission selection and perhaps too much hyperparameter tuning because my approach was completely leak-free. (My other submission which I unselected just 3 minutes before the deadline could have been in the 30th place.)
+Participating in this Kaggle competition was an important experience for me. I initially ranked 16th out of 2700 (gold medal zone) participants on the public leaderboard, which was exciting. However, when the private leaderboard was revealed, I dropped to 215th place. This was likely due to poor submission selection and perhaps too much hyperparameter tuning because my approach was completely leak-free. (My other submission which I unselected just 3 minutes before the deadline could have been in the 30th place.)
 
 
 # Skin Cancer Detection Using SLICE-3D Dataset
@@ -8,7 +8,7 @@ This repository contains the code and model implementation for the SLICE-3D data
 
 ## Overview
 
-In this solution, we use a combination of image-based models and tabular data to predict the probability that a lesion is malignant. The image data consists of 3D Total Body Photography (TBP) cropped lesion images. To enhance prediction accuracy, we generate OOF predictions from an EfficientNet-based image model and combine them with tabular data for a final ensemble using Gradient Boosted Decision Trees (GBDT).
+In this solution, we use a combination of image-based models and tabular data to predict the probability that a lesion is malignant. The image data consists of 3D Total Body Photography (TBP) cropped lesion images. To enhance prediction accuracy, we generate **OOF predictions** from an EfficientNet-based image model and combine them with tabular data for a final ensemble using Gradient Boosted Decision Trees (GBDT).
 
 ## Configuration
 
@@ -37,7 +37,7 @@ CONFIG = {
 
 ## Handling Class Imbalance
 
-Given the extreme class imbalance, we perform stratified sampling to maintain the ratio of positive to negative cases:
+Given the extreme class imbalance, we perform **stratified sampling** to maintain the ratio of positive to negative cases:
 
 ```python
 df_positive = df[df["target"] == 1].reset_index(drop=True)
@@ -51,7 +51,7 @@ We use Stratified Group K-Fold cross-validation to ensure that:
 * The target distribution is balanced across folds.
 * Patients (groups) are not split between training and validation sets to prevent data leakage.
 
-Same cv strategy is applied to both OOF stacking predictions and tabular models.
+Same cv strategy is applied to both OOF stacking predictions and tabular models to prevent data leakage.
 
 ```python
 sgfk = StratifiedGroupKFold(n_splits=CONFIG['n_fold'], shuffle=True, random_state=CONFIG['seed'])
@@ -61,7 +61,7 @@ for fold, (train_idx, val_idx) in enumerate(sgfk.split(df, df.target, df.patient
     df.loc[val_idx, "kfold"] = int(fold)
 ```
 ## Augmentations
-We applied extensive augmentation techniques from previous winning solutions of the ISIC 2020 competition using the albumentations library to enrich the training data:
+We applied extensive augmentation techniques from **previous winning solutions** of the ISIC 2020 competition using the albumentations library to enrich the training data:
 
 ```python
 data_transforms = {
@@ -122,7 +122,7 @@ The code is flexible to accommodate other architectures such as EVA02, ResNet, R
 
 ## Loss Function
 
-We used Binary Cross-Entropy Loss for this binary classification task. We also tried FocalLoss, but the target mean was much higher than expected.
+We used **Binary Cross-Entropy Loss** for this binary classification task. Given the high imbalance of the dataset, we also tried **FocalLoss**, but the target mean was much higher than expected.
 
 ## Optimizer and Scheduler
 We used the Adam optimizer with a learning rate scheduler combining gradual warmup and cosine annealing
