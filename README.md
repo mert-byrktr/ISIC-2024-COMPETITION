@@ -188,7 +188,7 @@ def select_features_using_corr_matrix(df, threshold=0.91):
 
 #### 4. **Out-of-Fold (OOF) Stacking Features**
 
-To further improve the tabular model's performance, we integrated OOF predictions from the image models as additional features in the tabular data. These predictions were generated using models like EfficientNet and EVA02, and were subsequently used for feature stacking in the Gradient Boosted Decision Tree (GBDT) models.
+To further improve the tabular model's performance, we integrated OOF predictions from the image models as additional features in the tabular data. These predictions were generated using models like EfficientNet, EVA02, ResNet, ResNext, ConvNext, and ResNest and were used for feature stacking in the Gradient Boosted Decision Tree (GBDT) models. In the final submission, efficient net and eva02 models and resnet family were used because they added more diversity.
 
 ```python
 df_effb0_oof = pd.read_csv(oof_path)
